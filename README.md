@@ -64,7 +64,8 @@ preview. Mix-and-match components to create any layout you want, or just use
 #### 🎨 Themable
 
 Playground is fully themeable with CSS Custom Properties, down to the color of
-each kind of syntax-highlighted token. It comes with lots of preset themes, too.
+each kind of syntax-highlighted token. It comes with lots of preset themes, and
+you can even import a VSCode theme using our configurator.
 
 ---
 
@@ -609,6 +610,10 @@ properties.
 # Syntax highlighting
 
 ## Themes
+
+**TIP:** Use the **_Import Theme_** button in the
+[configurator](https://polymerlabs.github.io/playground-elements/) to generate a
+Playground theme from any VSCode theme.
 
 The `playground-elements` package includes a directory of pre-configured
 syntax-highlighting themes. To load a theme, import its stylesheet, and apply the

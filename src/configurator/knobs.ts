@@ -18,6 +18,7 @@
  */
 
 import {themeNames} from './themes.js';
+import {tokens} from './highlight-tokens.js';
 
 interface BaseKnob<Id extends string, T> {
   id: Id;
@@ -42,6 +43,10 @@ interface SliderKnob<Id extends string> extends BaseKnob<Id, number> {
 interface ColorKnob<Id extends string> extends BaseKnob<Id, string> {
   type: 'color';
   unsetLabel?: string;
+  // Gross hack. When we load a new theme, we change color knob defaults. But if
+  // we switch back to the default theme, this is how we know what the original
+  // default was.
+  originalDefault?: string;
 }
 
 interface SelectKnob<Id extends string, T extends string>
@@ -77,18 +82,28 @@ function select<Id extends string, T extends string>(
 const pixels = (value: number) => value + 'px';
 
 export const knobs = [
-  // code editor
+  // code style
   select({
     id: 'theme',
     label: 'Theme',
-    section: 'code editor',
+    section: 'code',
     options: ['default', ...themeNames],
     default: 'default',
+  }),
+  slider({
+    id: 'fontSize',
+    label: 'Font size',
+    section: 'code',
+    cssProperty: '--playground-code-font-size',
+    formatCss: pixels,
+    min: 1,
+    max: 30,
+    default: 14,
   }),
   select({
     id: 'fontFamily',
     label: 'Font',
-    section: 'code editor',
+    section: 'code',
     cssProperty: '--playground-code-font-family',
     options: ['monospace', 'Roboto Mono', 'Source Code Pro', 'Ubuntu Mono'],
     formatCss: (value: string | number | boolean) => {
@@ -99,31 +114,75 @@ export const knobs = [
     },
     default: 'monospace',
   }),
-  slider({
-    id: 'fontSize',
-    label: 'Font size',
-    section: 'code editor',
-    cssProperty: '--playground-code-font-size',
-    formatCss: pixels,
-    min: 1,
-    max: 30,
-    default: 14,
+
+  ...tokens.map((token) => {
+    const {id, label, cssProperty, defaultValue} = token;
+    return color({
+      id,
+      label,
+      cssProperty,
+      default: defaultValue,
+      originalDefault: defaultValue,
+      section: 'code',
+    });
+  }),
+
+  // features
+  checkbox({
+    id: 'resizable',
+    label: 'Resizable',
+    section: 'features',
+    default: false,
+    htmlAttribute: 'resizable',
+  }),
+  checkbox({
+    id: 'editableFileSystem',
+    label: 'Editable filesystem',
+    section: 'features',
+    default: false,
+    htmlAttribute: 'editable-file-system',
   }),
   checkbox({
     id: 'lineNumbers',
     label: 'Line numbers',
-    section: 'code editor',
+    section: 'features',
     default: false,
     htmlAttribute: 'line-numbers',
   }),
+
+  // general appearance
   color({
-    id: 'editorBackground',
-    label: 'Background',
-    section: 'code editor',
-    cssProperty: '--playground-code-background',
-    formatCss: (val) => `${val} !important`,
-    default: '',
-    unsetLabel: 'From theme',
+    id: 'highlight',
+    label: 'Highlight',
+    cssProperty: '--playground-highlight-color',
+    default: '#6200ee',
+    section: 'general appearance',
+  }),
+  color({
+    id: 'pageBackground',
+    label: 'Page background',
+    default: '#cccccc',
+    originalDefault: '#cccccc',
+    section: 'general appearance',
+  }),
+  slider({
+    id: 'radius',
+    label: 'Radius',
+    cssProperty: 'border-radius',
+    formatCss: pixels,
+    min: 0,
+    max: 30,
+    default: 0,
+    section: 'general appearance',
+  }),
+  checkbox({
+    id: 'borders',
+    label: 'Borders',
+    cssProperty: '--playground-border',
+    formatCss: (value: string | number | boolean) =>
+      value ? '1px solid #ddd' : 'none',
+    default: true,
+    section: 'general appearance',
   }),
 
   // tab bar
@@ -141,53 +200,31 @@ export const knobs = [
     default: '#000000',
     section: 'tab bar',
   }),
+  slider({
+    id: 'barHeight',
+    label: 'Bar height',
+    cssProperty: '--playground-bar-height',
+    formatCss: pixels,
+    min: 10,
+    max: 100,
+    default: 40,
+    section: 'tab bar',
+  }),
 
-  // preview toolbar
+  // preview
   color({
     id: 'previewToolbarBackground',
     label: 'Background',
     cssProperty: '--playground-preview-toolbar-background',
     default: '#ffffff',
-    section: 'preview toolbar',
+    section: 'preview',
   }),
   color({
     id: 'previewToolbarForeground',
     label: 'Foreground',
     cssProperty: '--playground-preview-toolbar-foreground-color',
     default: '#444444',
-    section: 'preview toolbar',
-  }),
-
-  // general
-  checkbox({
-    id: 'borders',
-    label: 'Borders',
-    cssProperty: '--playground-border',
-    formatCss: (value: string | number | boolean) =>
-      value ? '1px solid #ddd' : 'none',
-    default: true,
-    section: 'general',
-  }),
-  checkbox({
-    id: 'resizable',
-    label: 'Resizable',
-    section: 'general',
-    default: false,
-    htmlAttribute: 'resizable',
-  }),
-  checkbox({
-    id: 'editableFileSystem',
-    label: 'Editable filesystem',
-    section: 'general',
-    default: false,
-    htmlAttribute: 'editable-file-system',
-  }),
-  color({
-    id: 'highlight',
-    label: 'Highlight',
-    cssProperty: '--playground-highlight-color',
-    default: '#6200ee',
-    section: 'general',
+    section: 'preview',
   }),
   slider({
     id: 'previewWidth',
@@ -197,33 +234,7 @@ export const knobs = [
     min: 0,
     max: 100,
     default: 30,
-    section: 'general',
-  }),
-  slider({
-    id: 'radius',
-    label: 'Radius',
-    cssProperty: 'border-radius',
-    formatCss: pixels,
-    min: 0,
-    max: 30,
-    default: 0,
-    section: 'general',
-  }),
-  slider({
-    id: 'barHeight',
-    label: 'Bar height',
-    cssProperty: '--playground-bar-height',
-    formatCss: pixels,
-    min: 10,
-    max: 100,
-    default: 35,
-    section: 'general',
-  }),
-  color({
-    id: 'pageBackground',
-    label: 'Page background',
-    default: '#cccccc',
-    section: 'general',
+    section: 'preview',
   }),
 ] as const;
 

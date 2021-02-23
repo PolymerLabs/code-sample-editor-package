@@ -49,6 +49,7 @@
   ],
   "devDependencies": {
     "@esm-bundle/chai": "^4.1.5",
+    "@material/mwc-dialog": "^0.20.0",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
     "@rollup/plugin-replace": "^2.3.3",

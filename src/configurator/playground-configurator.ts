@@ -12,9 +12,18 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import {LitElement, customElement, html, css} from 'lit-element';
+import {
+  LitElement,
+  customElement,
+  html,
+  css,
+  internalProperty,
+  query,
+} from 'lit-element';
+import {nothing} from 'lit-html';
 
 import '../playground-ide.js';
+import {PlaygroundIde} from '../playground-ide.js';
 import '../playground-code-editor.js';
 import {
   Knob,
@@ -29,6 +38,10 @@ import {
   knobsBySection,
 } from './knobs.js';
 import {themeStyles} from './themes.js';
+import '@material/mwc-dialog';
+import '@material/mwc-button';
+import './playground-theme-detector.js';
+import {tokens} from './highlight-tokens.js';
 
 /**
  * A configurator for the playground-* elements.
@@ -44,8 +57,8 @@ export class PlaygroundConfigurator extends LitElement {
       }
 
       #lhs {
-        width: 285px;
         overflow-y: auto;
+        width: 300px;
         border-right: 1px solid #ccc;
         box-shadow: -2px 0 6px 0px rgb(0 0 0 / 50%);
         z-index: 1;
@@ -79,11 +92,17 @@ export class PlaygroundConfigurator extends LitElement {
         display: flex;
         flex-wrap: wrap;
         border-top: 1px solid #ccc;
+        height: 30%;
+        overflow-y: auto;
         padding: 10px;
         --playground-code-font-family: 'Roboto Mono', monospace;
         --playground-code-font-size: 12px;
         --playground-code-background: transparent;
         background-color: #f7f7f7;
+      }
+
+      #code > div {
+        min-width: 50%;
       }
 
       h3 {
@@ -107,15 +126,14 @@ export class PlaygroundConfigurator extends LitElement {
 
       .knobs {
         display: grid;
-        grid-template-columns: 70px 1fr;
-        max-width: 400px;
+        grid-template-columns: repeat(4, 1fr);
         row-gap: 15px;
         column-gap: 10px;
         align-items: center;
       }
 
-      input[type='range'] {
-        width: 120px;
+      input[type='color'] {
+        width: 30px;
       }
 
       .knobs label {
@@ -127,31 +145,121 @@ export class PlaygroundConfigurator extends LitElement {
         flex: 1;
       }
 
+      .knobs select {
+        grid-column: 2 / -1;
+      }
+
       .sliderAndValue {
         display: flex;
         align-items: center;
+        grid-column: 2 / -1;
       }
 
       .sliderValue {
         margin-left: 5px;
+      }
+
+      #openDetectorButton {
+        background: #0075ff;
+        opacity: 0.8;
+        color: white;
+        padding: 5px;
+        border: none;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        grid-column-start: 2;
+        grid-column-end: -1;
+      }
+
+      #openDetectorButton:hover {
+        opacity: 1;
       }
     `,
   ];
 
   private values = new KnobValues();
 
+  @internalProperty()
+  private _themeDetectorOpen = false;
+
+  @query('playground-ide')
+  private _ide!: PlaygroundIde;
+
   connectedCallback() {
     super.connectedCallback();
     this.readUrlParams(new URL(document.location.href).searchParams);
   }
 
-  private setValue<T extends KnobId>(id: T, value: KnobValueType<T>) {
-    this.values.setValue(id, value);
+  private async setValue<T extends KnobId>(id: T, value: KnobValueType<T>) {
+    await this.setValues(
+      new Map<KnobId, unknown>([[id, value]])
+    );
+  }
+
+  private async setValues(values: Map<KnobId, unknown>) {
+    // Apply the theme first, because it sets new defaults, and we want any
+    // other values to take precedence.
+    const theme = values.get('theme');
+    if (theme) {
+      await this._applyTheme(theme as KnobValueType<'theme'>);
+    }
+    for (const [id, value] of values) {
+      this.values.setValue(id, value as any);
+    }
     this.setUrlParams();
     this.requestUpdate();
   }
 
+  private async _applyTheme(theme: KnobValueType<'theme'>) {
+    this.values.setValue('theme', theme);
+
+    if (theme === 'default') {
+      // The default theme isn't a stylesheet we can load and probe. We just
+      // have to know the original colors.
+      for (const token of tokens) {
+        const knob = knobsById[token.id];
+        if (knob.originalDefault) {
+          knob.default = knob.originalDefault;
+        }
+        this.values.setValue(knob.id, knob.default);
+      }
+      this.setUrlParams();
+      this.requestUpdate();
+      return;
+    }
+
+    // Reset each syntax highlighting knob to its default.
+    for (const token of tokens) {
+      const knob = knobsById[token.id];
+      this.values.setValue(knob.id, knob.default);
+    }
+
+    // Update to apply the theme stylesheet.
+    this.requestUpdate();
+    await this.updateComplete;
+
+    // Extract the new custom property values from the theme stylesheet for each
+    // syntax token.
+    const style = window.getComputedStyle(this._ide);
+    for (const token of tokens) {
+      const knob = knobsById[token.id];
+      if (!knob.cssProperty) {
+        continue;
+      }
+
+      const rgb = style.getPropertyValue(knob.cssProperty);
+      const hex = toHex(rgb);
+
+      // Change the value and the default. Change the default because the theme
+      // already applies this value.
+      this.values.setValue(knob.id, hex);
+      knob.default = hex;
+    }
+  }
+
   private readUrlParams(params: URLSearchParams) {
+    const values = new Map<KnobId, unknown>();
     for (const id of knobIds) {
       let urlValue = params.get(id);
       if (urlValue === null) {
@@ -160,21 +268,22 @@ export class PlaygroundConfigurator extends LitElement {
       const knob = knobsById[id];
       switch (knob.type) {
         case 'checkbox':
-          this.setValue(knob.id, urlValue === 'y');
+          values.set(knob.id, urlValue === 'y');
           break;
         case 'color':
-          this.setValue(knob.id, '#' + urlValue);
+          values.set(knob.id, '#' + urlValue);
           break;
         case 'slider':
-          this.setValue(knob.id, Number(urlValue));
+          values.set(knob.id, Number(urlValue));
           break;
         case 'select':
-          this.setValue(knob.id, urlValue as any);
+          values.set(knob.id, urlValue);
           break;
         default:
           throwUnreachable(knob, `Unexpected knob type ${(knob as Knob).type}`);
       }
     }
+    this.setValues(values);
   }
 
   private setUrlParams() {
@@ -210,6 +319,20 @@ export class PlaygroundConfigurator extends LitElement {
         ${this.cssText}
       </style>
 
+      <mwc-dialog
+        hideActions
+        id="detectorDialog"
+        .open=${this._themeDetectorOpen}
+        @closed=${this._closeThemeDetector}
+      >
+        ${this._themeDetectorOpen
+          ? html`<playground-theme-detector
+              @apply=${this._onThemeDetectorApply}
+              @cancel=${this._closeThemeDetector}
+            ></playground-theme-detector>`
+          : nothing}
+      </mwc-dialog>
+
       <div id="lhs">${this.knobs}</div>
 
       <div id="rhs">
@@ -218,6 +341,7 @@ export class PlaygroundConfigurator extends LitElement {
           style="background-color:${this.values.getValue('pageBackground')}"
         >
           <playground-ide
+            id="playground"
             class="playground-theme-${this.values.getValue('theme')}"
             .lineNumbers=${this.values.getValue('lineNumbers')}
             .resizable=${this.values.getValue('resizable')}
@@ -264,7 +388,7 @@ export class PlaygroundConfigurator extends LitElement {
 
   private get htmlText() {
     return `${this.themeImport}
-<playground-ide${this.htmlTextAttributes}>
+<playground-ide id="playground"${this.htmlTextAttributes}>
 </playground-ide>
 `;
   }
@@ -292,17 +416,17 @@ export class PlaygroundConfigurator extends LitElement {
       switch (knob.type) {
         case 'checkbox':
           if (value) {
-            attributes.push(` ${knob.htmlAttribute}`);
+            attributes.push(`\n  ${knob.htmlAttribute}`);
           }
           break;
         default:
-          attributes.push(` ${knob.htmlAttribute}="${value}"`);
+          attributes.push(`\n  ${knob.htmlAttribute}="${value}"`);
           break;
       }
     }
     const theme = this.values.getValue('theme');
     if (theme !== 'default') {
-      attributes.push(` class="playground-theme-${theme}"`);
+      attributes.push(`\n  class="playground-theme-${theme}"`);
     }
     return attributes.join('');
   }
@@ -319,32 +443,48 @@ export class PlaygroundConfigurator extends LitElement {
         knob.formatCss ? (knob as any).formatCss(value) : value
       };`;
       if (value === knob.default) {
-        line = `/*${line}*/`;
+        continue;
       } else {
         line = `  ${line}`;
       }
       props.push(line);
     }
     return `
-playground-ide {
+#playground {
 ${props.join('\n')}
 }
     `;
   }
 
   private knob(knob: Knob) {
-    const label = html`<label for=${knob.id}>${knob.label}</label>`;
+    let widget;
     switch (knob.type) {
       case 'select':
-        return [label, this.selectKnob(knob)];
+        widget = this.selectKnob(knob);
+        break;
       case 'slider':
-        return [label, this.sliderKnob(knob)];
+        widget = this.sliderKnob(knob);
+        break;
       case 'color':
-        return [label, this.colorKnob(knob)];
+        widget = this.colorKnob(knob);
+        break;
       case 'checkbox':
-        return [label, this.checkboxKnob(knob)];
+        widget = this.checkboxKnob(knob);
     }
-    return '';
+    if (!widget) {
+      return nothing;
+    }
+    const label = html`<label for=${knob.id}>${knob.label}</label>`;
+    if (knob.id === 'theme') {
+      const themeButton = html`<button
+        id="openDetectorButton"
+        @click=${this._openThemeDetector}
+      >
+        Import Theme
+      </button>`;
+      return [label, widget, html`<span></span>`, themeButton];
+    }
+    return [label, widget];
   }
 
   private selectKnob(knob: KnobsOfType<'select'>) {
@@ -411,7 +551,6 @@ ${props.join('\n')}
         id=${knob.id}
         type="color"
         .value=${value === '' ? '#ffffff' : String(value)}
-        ?disabled=${value === ''}
         @input=${(event: Event & {target: HTMLInputElement}) => {
           this.setValue(knob.id, event.target.value);
         }}
@@ -431,6 +570,44 @@ ${props.join('\n')}
         }}
       />
     `;
+  }
+
+  private _openThemeDetector() {
+    this._themeDetectorOpen = true;
+  }
+
+  private _closeThemeDetector() {
+    this._themeDetectorOpen = false;
+  }
+
+  private async _onThemeDetectorApply(
+    event: CustomEvent<{properties: Map<string, string | null>}>
+  ) {
+    const values = new Map<KnobId, any>();
+    values.set('theme', 'default');
+
+    const propertyToHex = new Map<string, string | undefined>();
+    for (const [property, rgb] of event.detail.properties) {
+      propertyToHex.set(property, rgb ? toHex(rgb) : undefined);
+    }
+
+    const defaultColorKnob = knobsById['synDefault'];
+    const defaultColor =
+      propertyToHex.get(defaultColorKnob.cssProperty!) ||
+      defaultColorKnob.default;
+
+    for (const knob of knobs) {
+      if (knob.cssProperty) {
+        if (propertyToHex.has(knob.cssProperty)) {
+          const hex = propertyToHex.get(knob.cssProperty) || defaultColor;
+          values.set(knob.id, hex);
+        }
+      }
+    }
+
+    this.setValues(values);
+
+    this._closeThemeDetector();
   }
 }
 
@@ -497,3 +674,19 @@ const githubCorner = html`<a
       }
     }
   </style>`;
+
+/**
+ * Convert "rgb(r, g, b)" to "#rrggbb".
+ */
+const toHex = (rgbStr: string): string => {
+  const match = rgbStr.match(
+    /^\s*rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*$/
+  );
+  if (!match) {
+    return '';
+  }
+  const [, r, g, b] = match;
+  const toHex = (decStr: string) =>
+    Number(decStr).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
