@@ -2,6 +2,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import {terser} from 'rollup-plugin-terser';
 import summary from 'rollup-plugin-summary';
+
 import * as fs from 'fs';
 
 function simpleReplace(replacements) {

@@ -24,3 +24,4 @@
 .tsbuildinfo
 /playground-service-worker.*
 /playground-service-worker-proxy.*
+/src/playground-styles.ts

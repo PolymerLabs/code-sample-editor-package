@@ -20,7 +20,7 @@ import {LitElement, customElement, css, property} from 'lit-element';
 // https://github.com/lezer-parser/javascript/issues/3. This module sets a
 // `CodeMirror` global.
 import './_codemirror/codemirror-bundle.js';
-import codemirrorStyles from './_codemirror/codemirror-styles.js';
+import playgroundStyles from './playground-styles.js';
 
 // TODO(aomarks) @types/codemirror exists, but installing it and referencing
 // global `CodeMirror` errors with:
@@ -74,21 +74,14 @@ export class PlaygroundCodeEditor extends LitElement {
     css`
       :host {
         display: block;
-        font-family: var(--playground-code-font-family, monospace);
-        font-size: var(--playground-code-font-size, unset);
-        /* CodeMirror uses z-indexes up to 6 to e.g. place scrollbars above the
-        code area. However, this can create undesirable stacking effects with
-        the rest of the page. Force a new stacking context. */
-        isolation: isolate;
       }
 
       .CodeMirror {
         height: 100% !important;
-        font-family: inherit !important;
         border-radius: inherit;
       }
     `,
-    codemirrorStyles,
+    playgroundStyles,
   ];
 
   // Used by tests.

@@ -10,17 +10,13 @@
 
 // This script generates the following files:
 //
-//   1) src/_codemirror/codemirror-styles.ts : A transformed version of the default
-//      CodeMirror stylesheet, which replaces fixed default colors with custom
-//      properties.
-//
-//   2) themes/*.css : A CSS file for each of the standard CodeMirror themes, which
+//   1) themes/*.css : A CSS file for each of the standard CodeMirror themes, which
 //      expresses that theme in terms of CSS custom properties.
 //
-//   3) src/themes/*.css.ts : A JavaScript module for each file in #2 that exports
+//   2) src/themes/*.css.ts : A JavaScript module for each file in #2 that exports
 //      the style as a lit CSSResult.
 //
-//   4) src/configurator/themes.ts : An aggregation of all theme names and theme
+//   3) src/configurator/themes.ts : An aggregation of all theme names and theme
 //      CSSResults, for use by the configurator.
 //
 // We convert each standard CodeMirror theme to a set of CSS custom properties by
@@ -85,60 +81,6 @@ const fromMap = {
   boxShadow: 'box-shadow',
 };
 
-const makeDefaultCss = (results) => {
-  let css = fs.readFileSync(
-    pathlib.join(
-      rootDir,
-      'node_modules',
-      'codemirror',
-      'lib',
-      'codemirror.css'
-    ),
-    'utf8'
-  );
-
-  // We don't use CodeMirror's built-in theme switching, so this default theme
-  // class will always be set. It serves no purpose now, so we might as well
-  // remove it from all selectors.
-  css = css.replace(/.cm-s-default/g, '');
-
-  // Hack! Neither clean-css nor csso are able to remove redundant rules when
-  // var() is used. But, they do assume that any [a-z]+ is a valid color name,
-  // so we can just generate some random names during minification, and then
-  // substitute back after. Maybe related issue:
-  // https://github.com/jakubpawlowicz/clean-css/issues/1121
-  const fakeValues = {};
-  let i = 0;
-  const alphabet = 'abcdefghijklmnopqrstuvwxyz';
-  for (const {from, to, value, selector, extraSelectors} of Object.values(
-    results
-  )) {
-    let fakeValue;
-    do {
-      fakeValue =
-        'fake' +
-        Array.from(
-          new Array(10),
-          () => alphabet[Math.floor(Math.random() * alphabet.length)]
-        ).join('');
-    } while (fakeValue in fakeValues);
-    fakeValues[fakeValue] = `var(${to}, ${value})`;
-    const realFrom = fromMap[from];
-    if (!realFrom) {
-      throw new Error(`No mapping for ${from}`);
-    }
-    css += `${selector} ${
-      extraSelectors ? ',' + extraSelectors : ''
-    }{ ${realFrom}: ${fakeValue}; }\n`;
-  }
-  css = minifyCss(css);
-  for (const [fake, real] of Object.entries(fakeValues)) {
-    css = css.replace(new RegExp(fake, 'g'), real);
-  }
-  css = postMinifyCss(css);
-  return css;
-};
-
 const makeThemeCss = (themeName, results, defaultResults) => {
   const excludeDefaults = Object.values(results).filter(
     (r) => defaultResults[r.to].value !== r.value
@@ -181,13 +123,6 @@ const main = async () => {
 
   // Default style
   const defaultResults = await page.evaluate(() => window.probe('default'));
-  const defaultCss = makeDefaultCss(defaultResults);
-  writes.push(
-    mkdirAndWriteUtf8(
-      pathlib.join(rootDir, 'src', '_codemirror', 'codemirror-styles.ts'),
-      makeCssModule(defaultCss)
-    )
-  );
 
   // Themes
   const excludeThemes = new Set([

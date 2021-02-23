@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 <!-- ### Fixed -->
 <!-- ### Removed -->
 
+## Unreleased
+
+### Added
+
+- Added `playground-styles.css` and `playground-styles.js` which can be imported
+  to apply Playground styles to server-side rendered code.
+
 ## [0.6.0] - 2021-02-19
 
 ### Changed
