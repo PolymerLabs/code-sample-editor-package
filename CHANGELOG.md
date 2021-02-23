@@ -19,10 +19,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Changed
+
+- Increased default `line-height` from `normal` to `1.4em`.
+- Added a default `padding-left` of `1em`.
+- Increased width of cursor from `1px` to `2px`.
+- Increased default tab `font-size` from `0.75rem` to `0.8em`;
+- Increased default `--playground-bar-height` from `35px` to `40px.
+- `--playground-cursor-color` now defaults to the value of
+  `--playground-code-default-color`.
+- `--playground-code-gutter-background` now defaults to the value of
+  `--playground-code-background`.
+- `--playground-code-gutter-margin-right` default changed from `1px solid #ddd` to `none`.
+
 ### Added
 
 - Added `playground-styles.css` and `playground-styles.js` which can be imported
   to apply Playground styles to server-side rendered code.
+
+- Added CSS custom properties:
+
+  - `--playground-code-line-height`: `line-height` of code in the editor.
+  - `--playground-code-padding-left`: `padding` of code in the editor (does not
+    affect position of line numbers).
+  - `--playground-tab-bar-font-size`: `font-size` of tabs in the file picker tab
+    bar.
+  - `--playground-tab-bar-active-color`: Text `color` of active file-picker tab.
+  - `--playground-tab-bar-indicator-color`: `color` of the active tab indicator
+    line (use `transparent` to hide).
+  - `--playground-tab-bar-active-background`: `background` of the active file-picker tab.
 
 ## [0.6.0] - 2021-02-19
 

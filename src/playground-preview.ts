@@ -45,7 +45,7 @@ export class PlaygroundPreview extends PlaygroundConnectedElement {
     }
 
     #toolbar {
-      flex: 0 0 var(--playground-bar-height, 35px);
+      flex: 0 0 var(--playground-bar-height, 40px);
       display: flex;
       align-items: center;
       justify-content: space-between;

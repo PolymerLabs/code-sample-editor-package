@@ -1,11 +1,29 @@
+/**
+ * This file is derived from `code-mirror/lib/codemirror.css`, modified in the
+ * following ways:
+ *
+ * - CSS custom properties added.
+ * - Rules for unused features and addons removed.
+ * - Unnecessary vendor prefixes removed.
+ * - `.cm-s-default` class selectors removed.
+ * - Empty rules removed.
+ */
+
 /* BASICS */
 
 .CodeMirror {
   /* Set height, width, borders, and global font properties here */
-  font-family: monospace;
+  font-family: var(--playground-code-font-family, monospace);
+  font-size: var(--playground-code-font-size, 14px);
   height: 300px;
-  color: black;
+  color: var(--playground-code-default-color, #000);
+  background: var(--playground-code-background, #fff);
   direction: ltr;
+  /* CodeMirror uses z-indexes up to 6 to e.g. place scrollbars above the code
+     area. However, this can create undesirable stacking effects with the rest
+     of the page. Force a new stacking context. */
+  isolation: isolate;
+  line-height: var(--playground-code-line-height, 1.4em);
 }
 
 /* PADDING */
@@ -20,132 +38,52 @@
 
 .CodeMirror-scrollbar-filler,
 .CodeMirror-gutter-filler {
-  background-color: transparent; /* The little square between H and V scrollbars */
+  background: transparent; /* The little square between H and V scrollbars */
 }
 
 /* GUTTER */
 
 .CodeMirror-gutters {
-  border-right: 1px solid #ddd;
-  background-color: #f7f7f7;
+  border-right: var(--playground-code-gutter-border-right, none);
+  background: var(
+    --playground-code-gutter-background,
+    var(--playground-code-background, #fff)
+  );
+  box-shadow: var(--playground-code-gutter-box-shadow, none);
   white-space: nowrap;
-}
-.CodeMirror-linenumbers {
 }
 .CodeMirror-linenumber {
   padding: 0 3px 0 5px;
   min-width: 20px;
   text-align: right;
-  color: #999;
+  color: var(--playground-code-linenumber-color, #999);
   white-space: nowrap;
-}
-
-.CodeMirror-guttermarker {
-  color: black;
-}
-.CodeMirror-guttermarker-subtle {
-  color: #999;
 }
 
 /* CURSOR */
 
 .CodeMirror-cursor {
-  border-left: 1px solid black;
+  border-left: 2px solid
+    var(
+      --playground-code-cursor-color,
+      var(--playground-code-default-color, #000)
+    );
   border-right: none;
   width: 0;
 }
-/* Shown when moving in bi-directional text */
-.CodeMirror div.CodeMirror-secondarycursor {
-  border-left: 1px solid silver;
-}
-.cm-fat-cursor .CodeMirror-cursor {
-  width: auto;
-  border: 0 !important;
-  background: #7e7;
-}
-.cm-fat-cursor div.CodeMirror-cursors {
-  z-index: 1;
-}
-.cm-fat-cursor-mark {
-  background-color: rgba(20, 255, 20, 0.5);
-  -webkit-animation: blink 1.06s steps(1) infinite;
-  -moz-animation: blink 1.06s steps(1) infinite;
-  animation: blink 1.06s steps(1) infinite;
-}
-.cm-animate-fat-cursor {
-  width: auto;
-  border: 0;
-  -webkit-animation: blink 1.06s steps(1) infinite;
-  -moz-animation: blink 1.06s steps(1) infinite;
-  animation: blink 1.06s steps(1) infinite;
-  background-color: #7e7;
-}
-@-moz-keyframes blink {
-  0% {
-  }
-  50% {
-    background-color: transparent;
-  }
-  100% {
-  }
-}
-@-webkit-keyframes blink {
-  0% {
-  }
-  50% {
-    background-color: transparent;
-  }
-  100% {
-  }
-}
+
 @keyframes blink {
   0% {
   }
   50% {
-    background-color: transparent;
+    background: transparent;
   }
   100% {
   }
 }
 
-/* Can style cursor different in overwrite (non-insert) mode */
-.CodeMirror-overwrite .CodeMirror-cursor {
-}
-
-.cm-tab {
-  display: inline-block;
-  text-decoration: inherit;
-}
-
-.CodeMirror-rulers {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -50px;
-  bottom: 0;
-  overflow: hidden;
-}
-.CodeMirror-ruler {
-  border-left: 1px solid #ccc;
-  top: 0;
-  bottom: 0;
-  position: absolute;
-}
-
 /* DEFAULT THEME */
 
-.cm-s-default .cm-header {
-  color: blue;
-}
-.cm-s-default .cm-quote {
-  color: #090;
-}
-.cm-negative {
-  color: #d44;
-}
-.cm-positive {
-  color: #292;
-}
 .cm-header,
 .cm-strong {
   font-weight: bold;
@@ -160,88 +98,66 @@
   text-decoration: line-through;
 }
 
-.cm-s-default .cm-keyword {
-  color: #708;
+.cm-keyword {
+  color: var(--playground-code-keyword-color, #708);
 }
-.cm-s-default .cm-atom {
-  color: #219;
+.cm-atom {
+  color: var(--playground-code-atom-color, #219);
 }
-.cm-s-default .cm-number {
-  color: #164;
+.cm-number {
+  color: var(--playground-code-number-color, #164);
 }
-.cm-s-default .cm-def {
-  color: #00f;
+.cm-def {
+  color: var(--playground-code-def-color, #00f);
 }
-.cm-s-default .cm-variable,
-.cm-s-default .cm-punctuation,
-.cm-s-default .cm-property,
-.cm-s-default .cm-operator {
+.cm-variable {
+  color: var(--playground-code-variable-color, #000);
 }
-.cm-s-default .cm-variable-2 {
-  color: #05a;
+.cm-property {
+  color: var(--playground-code-property-color, #000);
 }
-.cm-s-default .cm-variable-3,
-.cm-s-default .cm-type {
-  color: #085;
+.cm-operator {
+  color: var(--playground-code-operator-color, #000);
 }
-.cm-s-default .cm-comment {
-  color: #a50;
+.cm-variable-2 {
+  color: var(--playground-code-variable-2-color, #05a);
 }
-.cm-s-default .cm-string {
-  color: #a11;
+.cm-variable-3 {
+  color: var(--playground-code-variable-3-color, #085);
 }
-.cm-s-default .cm-string-2 {
-  color: #f50;
+.cm-type {
+  color: var(--playground-code-type-color, #085);
 }
-.cm-s-default .cm-meta {
-  color: #555;
+.cm-comment {
+  color: var(--playground-code-comment-color, #a50);
 }
-.cm-s-default .cm-qualifier {
-  color: #555;
+.cm-string {
+  color: var(--playground-code-string-color, #a11);
 }
-.cm-s-default .cm-builtin {
-  color: #30a;
+.cm-string-2 {
+  color: var(--playground-code-string-2-color, #f50);
 }
-.cm-s-default .cm-bracket {
-  color: #997;
+.cm-meta {
+  color: var(--playground-code-meta-color, #555);
 }
-.cm-s-default .cm-tag {
-  color: #170;
+.cm-qualifier {
+  color: var(--playground-code-qualifier-color, #555);
 }
-.cm-s-default .cm-attribute {
-  color: #00c;
+.cm-builtin {
+  color: var(--playground-code-builtin-color, #30a);
 }
-.cm-s-default .cm-hr {
-  color: #999;
+.cm-tag {
+  color: var(--playground-code-tag-color, #170);
 }
-.cm-s-default .cm-link {
-  color: #00c;
+.cm-attribute {
+  color: var(--playground-code-attribute-color, #00c);
 }
-
-.cm-s-default .cm-error {
-  color: #f00;
-}
-.cm-invalidchar {
-  color: #f00;
+.cm-callee {
+  color: var(--playground-code-callee-color, #000);
 }
 
 .CodeMirror-composing {
   border-bottom: 2px solid;
-}
-
-/* Default styles for common addons */
-
-div.CodeMirror span.CodeMirror-matchingbracket {
-  color: #0b0;
-}
-div.CodeMirror span.CodeMirror-nonmatchingbracket {
-  color: #a22;
-}
-.CodeMirror-matchingtag {
-  background: rgba(255, 150, 0, 0.3);
-}
-.CodeMirror-activeline-background {
-  background: #e8f2ff;
 }
 
 /* STOP */
@@ -252,7 +168,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .CodeMirror {
   position: relative;
   overflow: hidden;
-  background: white;
 }
 
 .CodeMirror-scroll {
@@ -336,10 +251,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   z-index: 4;
 }
 .CodeMirror-gutter-wrapper ::selection {
-  background-color: transparent;
-}
-.CodeMirror-gutter-wrapper ::-moz-selection {
-  background-color: transparent;
+  background: transparent;
 }
 
 .CodeMirror-lines {
@@ -349,14 +261,13 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .CodeMirror pre.CodeMirror-line,
 .CodeMirror pre.CodeMirror-line-like {
   /* Reset some styles that the rest of the page might have set */
-  -moz-border-radius: 0;
-  -webkit-border-radius: 0;
   border-radius: 0;
   border-width: 0;
   background: transparent;
   font-family: inherit;
   font-size: inherit;
   margin: 0;
+  padding-left: var(--playground-code-padding-left, 1em);
   white-space: pre;
   word-wrap: normal;
   line-height: inherit;
@@ -365,7 +276,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   position: relative;
   overflow: visible;
   -webkit-tap-highlight-color: transparent;
-  -webkit-font-variant-ligatures: contextual;
   font-variant-ligatures: contextual;
 }
 .CodeMirror-wrap pre.CodeMirror-line,
@@ -390,9 +300,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   padding: 0.1px; /* Force widget margins to stay inside of the container */
 }
 
-.CodeMirror-widget {
-}
-
 .CodeMirror-rtl pre {
   direction: rtl;
 }
@@ -407,7 +314,6 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .CodeMirror-gutter,
 .CodeMirror-gutters,
 .CodeMirror-linenumber {
-  -moz-box-sizing: content-box;
   box-sizing: content-box;
 }
 
@@ -441,10 +347,10 @@ div.CodeMirror-dragcursors {
 }
 
 .CodeMirror-selected {
-  background: #d9d9d9;
+  background: var(--playground-code-selection-background, #d7d4f0);
 }
 .CodeMirror-focused .CodeMirror-selected {
-  background: #d7d4f0;
+  background: var(--playground-code-selection-background, #d7d4f0);
 }
 .CodeMirror-crosshair {
   cursor: crosshair;
@@ -452,17 +358,7 @@ div.CodeMirror-dragcursors {
 .CodeMirror-line::selection,
 .CodeMirror-line > span::selection,
 .CodeMirror-line > span > span::selection {
-  background: #d7d4f0;
-}
-.CodeMirror-line::-moz-selection,
-.CodeMirror-line > span::-moz-selection,
-.CodeMirror-line > span > span::-moz-selection {
-  background: #d7d4f0;
-}
-
-.cm-searching {
-  background-color: #ffa;
-  background-color: rgba(255, 255, 0, 0.4);
+  background: var(--playground-code-selection-background, #d7d4f0);
 }
 
 /* Used to force a border model for a node */

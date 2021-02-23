@@ -46,7 +46,7 @@ export class PlaygroundTabBar extends PlaygroundConnectedElement {
   static styles = css`
     :host {
       display: flex;
-      height: var(--playground-bar-height, 35px);
+      height: var(--playground-bar-height, 40px);
       background: var(--playground-tab-bar-background, #eaeaea);
       flex-direction: row;
       align-items: center;
@@ -56,14 +56,17 @@ export class PlaygroundTabBar extends PlaygroundConnectedElement {
     mwc-tab-bar {
       overflow: hidden;
       height: 100%;
-      --mdc-tab-height: var(--playground-bar-height, 35px);
+      --mdc-tab-height: var(--playground-bar-height, 40px);
       --mdc-tab-text-label-color-default: var(
         --playground-tab-bar-foreground-color,
         #000
       );
       --mdc-typography-button-text-transform: none;
       --mdc-typography-button-font-weight: normal;
-      --mdc-typography-button-font-size: 0.75rem;
+      --mdc-typography-button-font-size: var(
+        --playground-tab-bar-font-size,
+        0.85em
+      );
       --mdc-typography-button-letter-spacing: normal;
     }
 
@@ -339,6 +342,24 @@ class PlaygroundTab extends Tab {
 
       mwc-icon-button {
         color: var(--playground-tab-bar-foreground-color);
+      }
+
+      .mdc-tab--active .mdc-tab__text-label {
+        color: var(
+          --playground-tab-bar-active-color,
+          var(--playground-highlight-color, #6200ee)
+        ) !important;
+      }
+
+      .mdc-tab--active {
+        background: var(--playground-tab-bar-active-background, transparent);
+      }
+
+      mwc-tab-indicator {
+        --mdc-theme-primary: var(
+          --playground-tab-bar-indicator-color,
+          var(--playground-highlight-color, #6200ee)
+        );
       }
     `,
   ] as unknown) as CSSResult;
